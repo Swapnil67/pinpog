@@ -24,3 +24,6 @@ $ nasm pinpog.asm -o pinpog
 ```console
 $ qemu-system-i386 pinpog
 ```
+
+[nasm]: https://www.nasm.us/
+[qemu]: https://www.qemu.org/
