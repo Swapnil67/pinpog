@@ -1,4 +1,4 @@
-org 0x7c00
+ org 0x7c00
 	%define ROW 70
 	%define WIDTH 320
 	%define HEIGHT 200
@@ -21,21 +21,32 @@ org 0x7c00
 	
 ;; 	jmp $			
 	
-	mov ah, 0x00
-	
-				; VGA mode 0x13 gives you 320x200 256 colors
+	mov ah, 0x00	
+	;; VGA mode 0x13
+	;; 320 x 200 256 colors
 	MOV al, 0x13
 	INT 0x10
+
+	;; Point int 0x1C to draw_frame
+	mov ax, 0
+	mov es, ax
+	mov word [es:0x0070], draw_frame
+	mov word [es:0x0072], 0x00
 	
-	MOV ax,0xA000
+	jmp $
+	
+
+draw_frame:
+	pusha
+	
+	MOV ax, 0xA000
 	MOV es, ax
 
-	mov word [ball_x], 0
-	mov word [ball_y], 0
-	mov word [ball_dx], 1
-	mov word [ball_dy], 1
+	;; Draw black ball
+	mov ch, 0x00
+	call draw_ball
 
-main_loop:
+	;; Move x,y co-ordinates
 	mov ax, [ball_x]
 	add ax, [ball_dx]
 	mov [ball_x], ax
@@ -44,15 +55,12 @@ main_loop:
 	add ax, [ball_dy]
 	mov [ball_y], ax
 
+	;; Draw color ball
 	mov ch, 0x0A
 	call draw_ball
-	call clear_screen
-	
-	jmp main_loop
-				; jump to the current address (i.e. forever)
 
-clear_screen:
-	ret
+	popa
+	iret
 	
   ;; hello: db "HELLO WORLD", 0
 	
@@ -82,15 +90,16 @@ draw_ball_j:			;col
 	inc word [i]
 	cmp word [i], BALL_HEIGHT
 	jb draw_ball_i
-	RET
 
-i:	dw 0
-j:	dw 0
+	ret
+
+i:	dw 0xcccc
+j:	dw 0xcccc
  
 ball_x:	dw 0
 ball_y:	dw 0
-ball_dx:	dw 0
-ball_dy:	dw 0
+ball_dx:	dw 1
+ball_dy:	dw 1
 	
 ;
 ; PADDING AND MAGIC BIOS NUMBER
