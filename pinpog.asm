@@ -3,6 +3,25 @@ org 0x7c00
 	%define WIDTH 320
 	%define HEIGHT 200
 	
+	%define COLOR_BLACK 0
+	%define COLOR_BLUE 1
+	%define COLOR_GREEN 2
+	%define COLOR_CYAN 3
+	%define COLOR_RED 4
+	%define COLOR_MAGENTA 5
+	%define COLOR_BROWN 6
+	%define COLOR_LIGHTGRAY 7
+	%define COLOR_DARKGRAY 8
+	%define COLOR_LIGHTBLUE 9
+	%define COLOR_LIGHTGREEN 10
+	%define COLOR_LIGHTCYAN 11
+	%define COLOR_LIGHTRED 12
+	%define COLOR_LIGHTMAGENTA 13
+	%define COLOR_YELLOW 14
+	%define COLOR_WHITE 15
+	
+	%define BACKGROUND_COLOR COLOR_DARKGRAY
+
 	%define BALL_WIDTH 10
 	%define BALL_HEIGHT 10
 
@@ -20,20 +39,34 @@ org 0x7c00
 ;; loop_end2:
 	
 ;; 	jmp $			
-	
+
+entry:	
 	mov ah, 0x00	
 	;; VGA mode 0x13
 	;; 320 x 200 256 colors
-	MOV al, 0x13
-	INT 0x10
+	mov al, 0x13
+	int 0x10
+
+	mov ch, BACKGROUND_COLOR
+	call fill_screen
 
 	;; Point int 0x1C to draw_frame
 	mov ax, 0
 	mov es, ax
 	mov word [es:0x0070], draw_frame
 	mov word [es:0x0072], 0x00
+
+.loop:
+	mov ah, 0x1
+	int 0x16
+	jz .loop		; Checks if keystrokes (0 == no keystroke)
+
+	mov ah, 0x0
+	int 0x16
+
+	neg word [ball_dx]
 	
-	jmp $
+	jmp .loop
 	
 
 draw_frame:
@@ -46,7 +79,7 @@ draw_frame:
 	mov es, ax
 
 	;; Draw black ball
-	mov ch, 0x00
+	mov ch, BACKGROUND_COLOR
 	call draw_ball
 	
 	;; Horizontal Collision Detection
@@ -95,6 +128,23 @@ draw_frame:
 	iret
 	
   ;; hello: db "HELLO WORLD", 0
+
+fill_screen:
+	;; ch - color
+	pusha
+
+	mov ax, 0xA000
+	mov es, ax
+	
+	xor bx, bx
+.loop:
+	mov BYTE [es: bx], ch
+	inc bx
+	cmp bx, WIDTH * HEIGHT
+	jb .loop
+
+	popa
+	ret
 	
 draw_ball:
 	
