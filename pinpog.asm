@@ -1,4 +1,4 @@
- org 0x7c00
+org 0x7c00
 	%define ROW 70
 	%define WIDTH 320
 	%define HEIGHT 200
@@ -38,14 +38,46 @@
 
 draw_frame:
 	pusha
+
+	mov ax, 0x0000
+	mov ds, ax
 	
-	MOV ax, 0xA000
-	MOV es, ax
+	mov ax, 0xa000
+	mov es, ax
 
 	;; Draw black ball
 	mov ch, 0x00
 	call draw_ball
+	
+	;; Horizontal Collision Detection
+	;; ball_x <= 0 || ball_x >= WIDTH - BALL_WIDTH
+	mov ax, [ball_x]
+	cmp ax, 0
+	jle .neg_dx
 
+	cmp ax, WIDTH - BALL_WIDTH
+	jge .neg_dx
+	
+	jmp .horcol_end
+.neg_dx:
+	neg word [ball_dx]
+.horcol_end:
+	;; Vertical Collision Detection
+	;; ball_y <= 0 ||  ball_y >= HEIGHT - BALL_HEIGHT
+	mov ax, [ball_y]
+	cmp ax, 0
+	jle .neg_dy
+
+	cmp ax, HEIGHT - BALL_HEIGHT
+	jge .neg_dy
+
+	jmp .vercol_end
+
+.neg_dy:
+	neg word [ball_dy]
+.vercol_end:
+	
+	;; Change the ball position
 	;; Move x,y co-ordinates
 	mov ax, [ball_x]
 	add ax, [ball_dx]
@@ -65,46 +97,50 @@ draw_frame:
   ;; hello: db "HELLO WORLD", 0
 	
 draw_ball:
+	
+	mov ax, 0x0000
+	mov ds, ax
+
 	;; cx - color
 	;; ax - row
 	;; bx - column
-	mov word [i], 0
-draw_ball_i:			;row
-	mov word [j], 0 
-draw_ball_j:			;col
+	mov word [y], 0
+.y:			;row
+	mov word [x], 0 
+.x:			;col
 	mov ax, WIDTH
-	mov bx, [i]
-	;; Add position offset
-	add bx, [ball_x]
-	mul bx
-	mov bx, ax
-	add bx, [j]
+	mov bx, [y]
 	;; Add position offset
 	add bx, [ball_y]
+	mul bx
+	mov bx, ax
+	add bx, [x]
+	;; Add position offset
+	add bx, [ball_x]
 	mov BYTE [es: bx], ch
 	
-	inc word [j]
-	cmp word [j], BALL_WIDTH
-	jb draw_ball_j
+	inc word [x]
+	cmp word [x], BALL_WIDTH
+	jb .x
 
-	inc word [i]
-	cmp word [i], BALL_HEIGHT
-	jb draw_ball_i
+	inc word [y]
+	cmp word [y], BALL_HEIGHT
+	jb .y 
 
 	ret
-
-i:	dw 0xcccc
-j:	dw 0xcccc
+	
+x:	dw 0xcccc
+y:	dw 0xcccc
  
-ball_x:	dw 0
-ball_y:	dw 0
-ball_dx:	dw 1
-ball_dy:	dw 1
+ball_x:	dw 10
+ball_y:	dw 10
+ball_dx:	dw 2
+ball_dy:	dw (-2)
 	
 ;
-; PADDING AND MAGIC BIOS NUMBER
+; padding and magic bios number
 ;
 
-	TIMES 510 - ($-$$) DB 0	; PAD THE SECTOR OUT WITH ZEROS
-	DW 0XAA55		; LAST TWO BYTES FORM THE MAGIC NUMBER
-                                ; SO BIOS KNOWS WE ARE A MOVMOV
+	times 510 - ($-$$) db 0	; pad the sector out with zeros
+	dw 0xaa55		; last two bytes form the magic number
+                                ; so bios knows we are a movmov
