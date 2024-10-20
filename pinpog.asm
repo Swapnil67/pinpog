@@ -127,39 +127,33 @@ draw_frame:
 	cmp word [ball_y], 0
 	jle .neg_ball_dy
 
-	mov ax, HEIGHT - BALL_HEIGHT
-
+	;; Ball touches the ground
+	cmp word [ball_y], HEIGHT - BALL_HEIGHT
+	jge .game_over
+	
 	;; ball to bar collision check
 	;; bar_x <= ball_x && ball_x + BALL_WIDTH <= bar_x + BAR_WIDTH
 	;; left bound check
 	mov bx, [ball_x]
 	cmp [bar_x], bx
-	jle .right_bound
-	jmp .right_bound_end
+	jg .ball_y_col
 
-.right_bound:
 	;; ball_x + BALL_WIDTH <= bar_x + BAR_WIDTH
 	;; ball_x - bar_x <= BAR_WIDTH - BALL_WIDTH
-	mov bx, [ball_x]
 	sub bx, [bar_x]
 	cmp bx, BAR_WIDTH - BALL_WIDTH
-	jg .right_bound_end
-	sub ax, BAR_Y
+	jg .ball_y_col
 
-	cmp [ball_y], ax
+	;; ball_y >= HEIGHT - BALL_HEIGHT - BAR_Y
+	cmp word [ball_y], HEIGHT - BALL_HEIGHT - BAR_Y
 	jge .neg_ball_dy
 	jmp .ball_y_col
 	
-.right_bound_end:
-
-	cmp word [ball_y], ax
-	;; jge .game_over
-	jmp .ball_y_col
-
 .game_over:
+	xor ax, ax
+	mov es, ax
 	mov word [es:0x0070], game_over
-	jmp .ball_y_col
-
+	
 .neg_ball_dy:
 	neg word [ball_dy]
 .ball_y_col:	
