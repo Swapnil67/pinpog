@@ -25,21 +25,6 @@ org 0x7c00
 	%define BALL_WIDTH 10
 	%define BALL_HEIGHT 10
 
-
-
-;; 	mov ah, 0x0e
-;; 	mov bx, 0
-;; loop2:
-;; 	mov al, BYTE [hello + bx]
-;; 	cmp al, 0
-;; 	je loop_end2
-;; 	int 0x10
-;; 	inc bx
-;; 	jmp loop2
-;; loop_end2:
-	
-;; 	jmp $			
-
 entry:	
 	mov ah, 0x00	
 	;; VGA mode 0x13
@@ -78,9 +63,17 @@ draw_frame:
 	mov ax, 0xa000
 	mov es, ax
 
+	mov word [rect_width], BALL_WIDTH
+	mov word [rect_height], BALL_HEIGHT
+
+	mov ax, [ball_x]
+	mov word [rect_x], ax
+	mov ax, [ball_y]
+	mov word [rect_y], ax
+
 	;; Draw black ball
 	mov ch, BACKGROUND_COLOR
-	call draw_ball
+	call fill_rect
 	
 	;; Horizontal Collision Detection
 	;; ball_x <= 0 || ball_x >= WIDTH - BALL_WIDTH
@@ -120,15 +113,20 @@ draw_frame:
 	add ax, [ball_dy]
 	mov [ball_y], ax
 
+	;; Update ball_x -> rect_x
+	;; Update ball_y -> rect_
+	mov ax, [ball_x]
+	mov word [rect_x], ax
+	mov ax, [ball_y]
+	mov word [rect_y], ax
+
 	;; Draw color ball
 	mov ch, 0x0A
-	call draw_ball
+	call fill_rect
 
 	popa
 	iret
 	
-  ;; hello: db "HELLO WORLD", 0
-
 fill_screen:
 	;; ch - color
 	pusha
@@ -146,14 +144,14 @@ fill_screen:
 	popa
 	ret
 	
-draw_ball:
+fill_rect:
+	;; ch - color
+	;; ax - row
+	;; bx - column
 	
 	mov ax, 0x0000
 	mov ds, ax
 
-	;; cx - color
-	;; ax - row
-	;; bx - column
 	mov word [y], 0
 .y:			;row
 	mov word [x], 0 
@@ -161,20 +159,22 @@ draw_ball:
 	mov ax, WIDTH
 	mov bx, [y]
 	;; Add position offset
-	add bx, [ball_y]
+	add bx, [rect_y]
 	mul bx
 	mov bx, ax
 	add bx, [x]
 	;; Add position offset
-	add bx, [ball_x]
+	add bx, [rect_x]
 	mov BYTE [es: bx], ch
 	
 	inc word [x]
-	cmp word [x], BALL_WIDTH
+	mov dx, [rect_width]
+	cmp word [x], dx
 	jb .x
 
 	inc word [y]
-	cmp word [y], BALL_HEIGHT
+	mov dx, [rect_height]
+	cmp word [y], dx
 	jb .y 
 
 	ret
@@ -186,6 +186,12 @@ ball_x:	dw 10
 ball_y:	dw 10
 ball_dx:	dw 2
 ball_dy:	dw (-2)
+bar_x:	dw 0
+bar_y:	dw 0
+rect_x:	dw 0xcccc
+rect_y:	dw 0xcccc
+rect_width:	dw 0xcccc
+rect_height:	dw 0xcccc
 	
 ;
 ; padding and magic bios number
