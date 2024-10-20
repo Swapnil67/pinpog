@@ -24,21 +24,13 @@ org 0x7c00
 
 	%define BALL_WIDTH 10
 	%define BALL_HEIGHT 10
-
-
-
-;; 	mov ah, 0x0e
-;; 	mov bx, 0
-;; loop2:
-;; 	mov al, BYTE [hello + bx]
-;; 	cmp al, 0
-;; 	je loop_end2
-;; 	int 0x10
-;; 	inc bx
-;; 	jmp loop2
-;; loop_end2:
+	%define BALL_VELOCITY 4
+	%define BALL_COLOR COLOR_YELLOW
 	
-;; 	jmp $			
+	%define BAR_WIDTH 100
+	%define BAR_Y 50
+	%define BAR_HEIGHT BALL_HEIGHT
+	%define BAR_COLOR COLOR_LIGHTBLUE
 
 entry:	
 	mov ah, 0x00	
@@ -63,12 +55,30 @@ entry:
 
 	mov ah, 0x0
 	int 0x16
-
-	neg word [ball_dx]
+	cmp al, 'a'
+	jz .swipe_left
+	cmp al, 'd'
+	jz .swipe_right
+	cmp al, ' '
+	jz .toggle_pause
 	
 	jmp .loop
+.swipe_left:
+	mov word [bar_dx], -10
+	jmp .loop
+.swipe_right:
+	mov word [bar_dx], 10
+	jmp .loop
+.toggle_pause:
+	mov ax, word [es:0x0070]
+	cmp ax, do_nothing
+	jz .unpause
+	mov word [es:0x0070], do_nothing
+	jmp .loop
+.unpause:
+	mov word [es:0x0070], draw_frame
+	jmp .loop
 	
-
 draw_frame:
 	pusha
 
@@ -78,57 +88,128 @@ draw_frame:
 	mov ax, 0xa000
 	mov es, ax
 
-	;; Draw black ball
+	;; Clear ball
+	mov word [rect_width], BALL_WIDTH
+	mov word [rect_height], BALL_HEIGHT
+	mov ax, [ball_x]
+	mov word [rect_x], ax
+	mov ax, [ball_y]
+	mov word [rect_y], ax
 	mov ch, BACKGROUND_COLOR
-	call draw_ball
+	call fill_rect
+
+	;; Clear bar
+	mov word [rect_width], BAR_WIDTH
+	mov word [rect_height], BAR_HEIGHT
+	mov ax, [bar_x]
+	mov [rect_x], ax
+	mov word [rect_y], HEIGHT - BAR_Y
+	mov ch, BACKGROUND_COLOR
+	call fill_rect
 	
 	;; Horizontal Collision Detection
 	;; ball_x <= 0 || ball_x >= WIDTH - BALL_WIDTH
 	mov ax, [ball_x]
 	cmp ax, 0
-	jle .neg_dx
+	jle .neg_ball_dx
 
 	cmp ax, WIDTH - BALL_WIDTH
-	jge .neg_dx
+	jge .neg_ball_dx
 	
-	jmp .horcol_end
-.neg_dx:
+	jmp .ball_x_col
+.neg_ball_dx:
 	neg word [ball_dx]
-.horcol_end:
+.ball_x_col:
 	;; Vertical Collision Detection
 	;; ball_y <= 0 ||  ball_y >= HEIGHT - BALL_HEIGHT
 	mov ax, [ball_y]
 	cmp ax, 0
-	jle .neg_dy
+	jle .neg_ball_dy
 
-	cmp ax, HEIGHT - BALL_HEIGHT
-	jge .neg_dy
-
-	jmp .vercol_end
-
-.neg_dy:
-	neg word [ball_dy]
-.vercol_end:
+	mov ax, HEIGHT - BALL_HEIGHT
 	
-	;; Change the ball position
-	;; Move x,y co-ordinates
+	;; TODO check ball_x within the range of bar
+	;; bar_x <= ball_x && ball_x + BALL_WIDTH <= bar_x + BAR_WIDTH
+	mov bx, [ball_x]
+	cmp [bar_x], bx
+	jle .right_bound
+	jmp .right_bound_end
+
+.right_bound:
+	;; ball_x + BALL_WIDTH <= bar_x + BAR_WIDTH
+	;; ball_x - bar_x <= BAR_WIDTH - BALL_WIDTH
+	mov bx, [ball_x]
+	sub bx, [bar_x]
+	cmp bx, BAR_WIDTH - BALL_WIDTH
+	jg .right_bound_end
+	sub ax, BAR_Y
+	
+.right_bound_end:
+
+	cmp [ball_y], ax
+	jge .neg_ball_dy
+
+	jmp .ball_y_col
+
+.neg_ball_dy:
+	neg word [ball_dy]
+.ball_y_col:	
+
+	;; BAR Collision detection
+	;; if(bar_x <= 0 || bar_x >= WIDTH - BAR_WIDTH) 
+	mov ax, [bar_x]
+	cmp ax, 0
+	jle .neg_bar_dx
+
+	cmp ax, WIDTH - BAR_WIDTH
+	jge .neg_bar_dx
+
+	jmp .bar_x_col
+.neg_bar_dx:
+	neg word [bar_dx]
+.bar_x_col:
+	
+	;; ball_x += ball_dx
 	mov ax, [ball_x]
 	add ax, [ball_dx]
 	mov [ball_x], ax
 
+	;; ball_y += ball_dy
 	mov ax, [ball_y]
 	add ax, [ball_dy]
 	mov [ball_y], ax
 
+	;; bar_x += bar_dx
+	mov ax, [bar_x]
+	add ax, [bar_dx]
+	mov [bar_x], ax
+
 	;; Draw color ball
-	mov ch, 0x0A
-	call draw_ball
+	;; Update ball_x -> rect_x
+	;; Update ball_y -> rect_y
+	mov word [rect_width], BALL_WIDTH
+	mov word [rect_height], BALL_HEIGHT
+	mov ax, [ball_x]
+	mov word [rect_x], ax
+	mov ax, [ball_y]
+	mov word [rect_y], ax
+	mov ch, BALL_COLOR
+	call fill_rect
+
+	;; Draw bar
+	mov word [rect_width], BAR_WIDTH
+	mov word [rect_height], BAR_HEIGHT
+	mov ax, [bar_x]
+	mov [rect_x], ax
+	mov word [rect_y], HEIGHT - BAR_Y
+	mov ch, BAR_COLOR
+	call fill_rect	
 
 	popa
 	iret
 	
-  ;; hello: db "HELLO WORLD", 0
-
+do_nothing:	iret
+	
 fill_screen:
 	;; ch - color
 	pusha
@@ -146,14 +227,14 @@ fill_screen:
 	popa
 	ret
 	
-draw_ball:
+fill_rect:
+	;; ch - color
+	;; ax - row
+	;; bx - column
 	
 	mov ax, 0x0000
 	mov ds, ax
 
-	;; cx - color
-	;; ax - row
-	;; bx - column
 	mov word [y], 0
 .y:			;row
 	mov word [x], 0 
@@ -161,20 +242,22 @@ draw_ball:
 	mov ax, WIDTH
 	mov bx, [y]
 	;; Add position offset
-	add bx, [ball_y]
+	add bx, [rect_y]
 	mul bx
 	mov bx, ax
 	add bx, [x]
 	;; Add position offset
-	add bx, [ball_x]
+	add bx, [rect_x]
 	mov BYTE [es: bx], ch
 	
 	inc word [x]
-	cmp word [x], BALL_WIDTH
+	mov dx, [rect_width]
+	cmp word [x], dx
 	jb .x
 
 	inc word [y]
-	cmp word [y], BALL_HEIGHT
+	mov dx, [rect_height]
+	cmp word [y], dx
 	jb .y 
 
 	ret
@@ -184,8 +267,17 @@ y:	dw 0xcccc
  
 ball_x:	dw 10
 ball_y:	dw 10
-ball_dx:	dw 2
-ball_dy:	dw (-2)
+ball_dx:	dw BALL_VELOCITY
+ball_dy:	dw -BALL_VELOCITY
+	
+bar_x:	dw 10
+bar_y:	dw 0
+bar_dx:	dw 4
+	
+rect_x:	dw 0xcccc
+rect_y:	dw 0xcccc
+rect_width:	dw 0xcccc
+rect_height:	dw 0xcccc
 	
 ;
 ; padding and magic bios number
