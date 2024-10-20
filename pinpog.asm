@@ -101,29 +101,43 @@ draw_frame:
 	;; ball_x <= 0 || ball_x >= WIDTH - BALL_WIDTH
 	mov ax, [ball_x]
 	cmp ax, 0
-	jle .neg_dx
+	jle .neg_ball_dx
 
 	cmp ax, WIDTH - BALL_WIDTH
-	jge .neg_dx
+	jge .neg_ball_dx
 	
-	jmp .horcol_end
-.neg_dx:
+	jmp .ball_x_col
+.neg_ball_dx:
 	neg word [ball_dx]
-.horcol_end:
+.ball_x_col:
 	;; Vertical Collision Detection
 	;; ball_y <= 0 ||  ball_y >= HEIGHT - BALL_HEIGHT
 	mov ax, [ball_y]
 	cmp ax, 0
-	jle .neg_dy
+	jle .neg_ball_dy
 
 	cmp ax, HEIGHT - BALL_HEIGHT
-	jge .neg_dy
+	jge .neg_ball_dy
 
-	jmp .vercol_end
+	jmp .ball_y_col
 
-.neg_dy:
+.neg_ball_dy:
 	neg word [ball_dy]
-.vercol_end:
+.ball_y_col:	
+
+	;; BAR Collision detection
+	;; if(bar_x <= 0 || bar_x >= WIDTH - BAR_WIDTH) 
+	mov ax, [bar_x]
+	cmp ax, 0
+	jle .neg_bar_dx
+
+	cmp ax, WIDTH - BAR_WIDTH
+	jge .neg_bar_dx
+
+	jmp .bar_x_col
+.neg_bar_dx:
+	neg word [bar_dx]
+.bar_x_col:
 	
 	;; ball_x += ball_dx
 	mov ax, [ball_x]
@@ -224,7 +238,7 @@ ball_y:	dw 10
 ball_dx:	dw 2
 ball_dy:	dw (-2)
 	
-bar_x:	dw 0
+bar_x:	dw 10
 bar_y:	dw 0
 bar_dx:	dw 4
 	
