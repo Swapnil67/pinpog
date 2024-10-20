@@ -24,6 +24,8 @@ org 0x7c00
 
 	%define BALL_WIDTH 10
 	%define BALL_HEIGHT 10
+	%define BAR_WIDTH 100
+	%define BAR_HEIGHT BALL_HEIGHT
 
 entry:	
 	mov ah, 0x00	
@@ -121,8 +123,19 @@ draw_frame:
 	mov word [rect_y], ax
 
 	;; Draw color ball
-	mov ch, 0x0A
+	mov ch, COLOR_LIGHTGREEN
 	call fill_rect
+
+	;; Draw bar
+	mov ax, BAR_WIDTH
+	mov [rect_width], ax
+	mov ax, BAR_HEIGHT
+	mov [rect_height], ax
+	mov word [rect_x], 10
+	mov word [rect_y], HEIGHT - 20
+	mov ch, COLOR_YELLOW
+	call fill_rect
+	
 
 	popa
 	iret
@@ -188,6 +201,7 @@ ball_dx:	dw 2
 ball_dy:	dw (-2)
 bar_x:	dw 0
 bar_y:	dw 0
+	
 rect_x:	dw 0xcccc
 rect_y:	dw 0xcccc
 rect_width:	dw 0xcccc
