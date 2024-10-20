@@ -120,15 +120,18 @@ draw_frame:
 .neg_ball_dx:
 	neg word [ball_dx]
 .ball_x_col:
+
 	;; Vertical Collision Detection
 	;; ball_y <= 0 ||  ball_y >= HEIGHT - BALL_HEIGHT
-	mov ax, [ball_y]
-	cmp ax, 0
+	;; top collision check
+	cmp word [ball_y], 0
 	jle .neg_ball_dy
 
 	mov ax, HEIGHT - BALL_HEIGHT
 
+	;; ball to bar collision check
 	;; bar_x <= ball_x && ball_x + BALL_WIDTH <= bar_x + BAR_WIDTH
+	;; left bound check
 	mov bx, [ball_x]
 	cmp [bar_x], bx
 	jle .right_bound
@@ -142,12 +145,19 @@ draw_frame:
 	cmp bx, BAR_WIDTH - BALL_WIDTH
 	jg .right_bound_end
 	sub ax, BAR_Y
-	
-.right_bound_end:
 
 	cmp [ball_y], ax
 	jge .neg_ball_dy
+	jmp .ball_y_col
+	
+.right_bound_end:
 
+	cmp word [ball_y], ax
+	;; jge .game_over
+	jmp .ball_y_col
+
+.game_over:
+	mov word [es:0x0070], game_over
 	jmp .ball_y_col
 
 .neg_ball_dy:
@@ -208,6 +218,11 @@ draw_frame:
 	iret
 	
 do_nothing:	iret
+
+game_over:
+	mov ch, COLOR_RED
+	call fill_screen
+	iret
 	
 fill_screen:
 	;; ch - color
