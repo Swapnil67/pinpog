@@ -55,20 +55,28 @@ entry:
 
 	mov ah, 0x0
 	int 0x16
-
 	cmp al, 'a'
-	je .swipe_left
-
+	jz .swipe_left
 	cmp al, 'd'
-	je .swipe_right
+	jz .swipe_right
+	cmp al, ' '
+	jz .toggle_pause
 	
 	jmp .loop
 .swipe_left:
 	mov word [bar_dx], -10
 	jmp .loop
-	
 .swipe_right:
 	mov word [bar_dx], 10
+	jmp .loop
+.toggle_pause:
+	mov ax, word [es:0x0070]
+	cmp ax, do_nothing
+	jz .unpause
+	mov word [es:0x0070], do_nothing
+	jmp .loop
+.unpause:
+	mov word [es:0x0070], draw_frame
 	jmp .loop
 	
 draw_frame:
@@ -199,6 +207,8 @@ draw_frame:
 
 	popa
 	iret
+	
+do_nothing:	iret
 	
 fill_screen:
 	;; ch - color
