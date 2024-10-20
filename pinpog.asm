@@ -24,9 +24,11 @@ org 0x7c00
 
 	%define BALL_WIDTH 10
 	%define BALL_HEIGHT 10
+	%define BALL_VELOCITY 4
 	%define BALL_COLOR COLOR_YELLOW
 	
 	%define BAR_WIDTH 100
+	%define BAR_Y 50
 	%define BAR_HEIGHT BALL_HEIGHT
 	%define BAR_COLOR COLOR_LIGHTBLUE
 
@@ -93,7 +95,7 @@ draw_frame:
 	mov word [rect_height], BAR_HEIGHT
 	mov ax, [bar_x]
 	mov [rect_x], ax
-	mov word [rect_y], HEIGHT - 20
+	mov word [rect_y], HEIGHT - BAR_Y
 	mov ch, BACKGROUND_COLOR
 	call fill_rect
 	
@@ -116,7 +118,27 @@ draw_frame:
 	cmp ax, 0
 	jle .neg_ball_dy
 
-	cmp ax, HEIGHT - BALL_HEIGHT
+	mov ax, HEIGHT - BALL_HEIGHT
+	
+	;; TODO check ball_x within the range of bar
+	;; bar_x <= ball_x && ball_x + BALL_WIDTH <= bar_x + BAR_WIDTH
+	mov bx, [ball_x]
+	cmp [bar_x], bx
+	jle .right_bound
+	jmp .right_bound_end
+
+.right_bound:
+	;; ball_x + BALL_WIDTH <= bar_x + BAR_WIDTH
+	;; ball_x - bar_x <= BAR_WIDTH - BALL_WIDTH
+	mov bx, [ball_x]
+	sub bx, [bar_x]
+	cmp bx, BAR_WIDTH - BALL_WIDTH
+	jg .right_bound_end
+	sub ax, BAR_Y
+	
+.right_bound_end:
+
+	cmp [ball_y], ax
 	jge .neg_ball_dy
 
 	jmp .ball_y_col
@@ -171,7 +193,7 @@ draw_frame:
 	mov word [rect_height], BAR_HEIGHT
 	mov ax, [bar_x]
 	mov [rect_x], ax
-	mov word [rect_y], HEIGHT - 20
+	mov word [rect_y], HEIGHT - BAR_Y
 	mov ch, BAR_COLOR
 	call fill_rect	
 
@@ -235,8 +257,8 @@ y:	dw 0xcccc
  
 ball_x:	dw 10
 ball_y:	dw 10
-ball_dx:	dw 2
-ball_dy:	dw (-2)
+ball_dx:	dw BALL_VELOCITY
+ball_dy:	dw -BALL_VELOCITY
 	
 bar_x:	dw 10
 bar_y:	dw 0
