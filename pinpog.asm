@@ -127,8 +127,7 @@ draw_frame:
 	jle .neg_ball_dy
 
 	mov ax, HEIGHT - BALL_HEIGHT
-	
-	;; TODO check ball_x within the range of bar
+
 	;; bar_x <= ball_x && ball_x + BALL_WIDTH <= bar_x + BAR_WIDTH
 	mov bx, [ball_x]
 	cmp [bar_x], bx
@@ -156,7 +155,7 @@ draw_frame:
 .ball_y_col:	
 
 	;; BAR Collision detection
-	;; if(bar_x <= 0 || bar_x >= WIDTH - BAR_WIDTH) 
+	;; bar_x <= 0 || bar_x >= WIDTH - BAR_WIDTH 
 	mov ax, [bar_x]
 	cmp ax, 0
 	jle .neg_bar_dx
