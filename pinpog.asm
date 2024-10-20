@@ -54,13 +54,21 @@ entry:
 	mov ah, 0x0
 	int 0x16
 
-	mov ax, [bar_dx]
-	not ax
-	mov [bar_dx], ax
+	cmp al, 'a'
+	je .swipe_left
+
+	cmp al, 'd'
+	je .swipe_right
 	
 	jmp .loop
+.swipe_left:
+	mov word [bar_dx], -10
+	jmp .loop
 	
-
+.swipe_right:
+	mov word [bar_dx], 10
+	jmp .loop
+	
 draw_frame:
 	pusha
 
