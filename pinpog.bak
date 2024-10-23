@@ -279,7 +279,7 @@ ball_dx:	dw BALL_VELOCITY
 ball_dy:	dw -BALL_VELOCITY
 	
 bar_x:	dw 10
-bar_y:	dw HEIGHT - BAR_Y
+bar_y:	dw 0
 bar_dx:	dw 4
 	
 rect_x:	dw 0xcccc
