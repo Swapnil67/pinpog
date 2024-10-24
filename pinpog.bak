@@ -31,8 +31,6 @@ org 0x7c00
 	%define BAR_Y 50
 	%define BAR_HEIGHT BALL_HEIGHT
 	%define BAR_COLOR COLOR_LIGHTBLUE
-	%define VGA_OFFSET 0xA000 ; Video Memory Location
-	
 
 entry:	
 	mov ah, 0x00	
@@ -41,11 +39,14 @@ entry:
 	mov al, 0x13
 	int 0x10
 
-	mov al, BACKGROUND_COLOR
+	mov ch, BACKGROUND_COLOR
 	call fill_screen
 
 	;; Point int 0x1C to draw_frame
-	mov dword [0x0070], draw_frame
+	mov ax, 0
+	mov es, ax
+	mov word [es:0x0070], draw_frame
+	mov word [es:0x0072], 0x00
 
 .loop:
 	mov ah, 0x1
@@ -69,35 +70,40 @@ entry:
 	mov word [bar_dx], 10
 	jmp .loop
 .toggle_pause:
-	mov ax, word [0x0070]
+	mov ax, word [es:0x0070]
 	cmp ax, do_nothing
 	jz .unpause
-	mov word [0x0070], do_nothing
+	mov word [es:0x0070], do_nothing
 	jmp .loop
 .unpause:
-	mov word [0x0070], draw_frame
+	mov word [es:0x0070], draw_frame
 	jmp .loop
 	
 draw_frame:
 	pusha
 
-	xor ax, ax
+	mov ax, 0x0000
 	mov ds, ax
 	
-	mov ax, VGA_OFFSET
+	mov ax, 0xa000
 	mov es, ax
 
 	;; Clear ball
 	mov word [rect_width], BALL_WIDTH
 	mov word [rect_height], BALL_HEIGHT
-	mov si, ball_x
-	mov ch, BACKGROUND_COLOR	
+	mov ax, [ball_x]
+	mov word [rect_x], ax
+	mov ax, [ball_y]
+	mov word [rect_y], ax
+	mov ch, BACKGROUND_COLOR
 	call fill_rect
 
 	;; Clear bar
 	mov word [rect_width], BAR_WIDTH
 	mov word [rect_height], BAR_HEIGHT
-	mov si, bar_x
+	mov ax, [bar_x]
+	mov [rect_x], ax
+	mov word [rect_y], HEIGHT - BAR_Y
 	mov ch, BACKGROUND_COLOR
 	call fill_rect
 	
@@ -144,7 +150,9 @@ draw_frame:
 	jmp .ball_y_col
 	
 .game_over:
-	mov word [0x0070], game_over
+	xor ax, ax
+	mov es, ax
+	mov word [es:0x0070], game_over
 	
 .neg_ball_dy:
 	neg word [ball_dy]
@@ -184,14 +192,19 @@ draw_frame:
 	;; Update ball_y -> rect_y
 	mov word [rect_width], BALL_WIDTH
 	mov word [rect_height], BALL_HEIGHT
-	mov si, ball_x
+	mov ax, [ball_x]
+	mov word [rect_x], ax
+	mov ax, [ball_y]
+	mov word [rect_y], ax
 	mov ch, BALL_COLOR
 	call fill_rect
 
 	;; Draw bar
 	mov word [rect_width], BAR_WIDTH
 	mov word [rect_height], BAR_HEIGHT
-	mov si, bar_x
+	mov ax, [bar_x]
+	mov [rect_x], ax
+	mov word [rect_y], HEIGHT - BAR_Y
 	mov ch, BAR_COLOR
 	call fill_rect	
 
@@ -201,64 +214,76 @@ draw_frame:
 do_nothing:	iret
 
 game_over:
-	pusha
-	mov al, COLOR_RED
+	mov ch, COLOR_RED
 	call fill_screen
-	popa
 	iret
-
-	;; Iterates through the entire video memory & fills it with a color
+	
 fill_screen:
 	;; ch - color
 	pusha
 
-	mov bx, VGA_OFFSET
-	mov es, bx
-	xor di, di
-	mov cx, WIDTH * HEIGHT
-	rep stosb
+	mov ax, 0xA000
+	mov es, ax
+	
+	xor bx, bx
+.loop:
+	mov BYTE [es: bx], ch
+	inc bx
+	cmp bx, WIDTH * HEIGHT
+	jb .loop
 
 	popa
 	ret
 	
 fill_rect:
 	;; ch - color
-	;; si - pointer to ball_x or bar_x
+	;; ax - row
+	;; bx - column
+	
+	mov ax, 0x0000
+	mov ds, ax
 
-	;; (y + rect_y) * WIDTH + rect_x  [Position of the beginning of the row]
+	mov word [y], 0
+.y:			;row
+	mov word [x], 0 
+.x:			;col
 	mov ax, WIDTH
-	xor di, di
-	add di, [si + 2]
-	mul di
-	mov di, ax
-	add di, [si]
-
-	mov al, ch
-	mov bx, [rect_height]
+	mov bx, [y]
+	;; Add position offset
+	add bx, [rect_y]
+	mul bx
+	mov bx, ax
+	add bx, [x]
+	;; Add position offset
+	add bx, [rect_x]
+	mov BYTE [es: bx], ch
 	
-.row:			;row
-	
-	;; col
-	mov cx, [rect_width]
-	rep stosb
+	inc word [x]
+	mov dx, [rect_width]
+	cmp word [x], dx
+	jb .x
 
-	;; Add Screen Width to di to get next position of the beginning of the row
-	sub di, [rect_width]
-	add di, WIDTH
+	inc word [y]
+	mov dx, [rect_height]
+	cmp word [y], dx
+	jb .y 
 
-	dec bx
-	jnz .row
 	ret
 	
+x:	dw 0xcccc
+y:	dw 0xcccc
+ 
 ball_x:	dw 10
 ball_y:	dw 10
 ball_dx:	dw BALL_VELOCITY
 ball_dy:	dw -BALL_VELOCITY
 	
 bar_x:	dw 10
-bar_y:	dw HEIGHT - BAR_Y
+bar_y:	dw 0
 bar_dx:	dw 4
 	
+rect_x:	dw 0xcccc
+rect_y:	dw 0xcccc
 rect_width:	dw 0xcccc
 rect_height:	dw 0xcccc
 	
@@ -269,9 +294,3 @@ rect_height:	dw 0xcccc
 	times 510 - ($-$$) db 0	; pad the sector out with zeros
 	dw 0xaa55		; last two bytes form the magic number
                                 ; so bios knows we are a movmov
-
-	%if $ - $$ != 512
-	%fatal Resulting size is not 512
-	%endif
-
-
