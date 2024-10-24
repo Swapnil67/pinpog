@@ -41,7 +41,7 @@ entry:
 	mov al, 0x13
 	int 0x10
 
-	mov ch, BACKGROUND_COLOR
+	mov al, BACKGROUND_COLOR
 	call fill_screen
 
 	;; Point int 0x1C to draw_frame
@@ -206,8 +206,10 @@ draw_frame:
 do_nothing:	iret
 
 game_over:
-	mov ch, COLOR_RED
+	pusha
+	mov al, COLOR_RED
 	call fill_screen
+	popa
 	iret
 
 	;; Iterates through the entire video memory & fills it with a color
@@ -215,10 +217,9 @@ fill_screen:
 	;; ch - color
 	pusha
 
-	mov ax, VGA_OFFSET
-	mov es, ax
+	mov bx, VGA_OFFSET
+	mov es, bx
 	xor di, di
-	mov al, ch
 	mov cx, WIDTH * HEIGHT
 	rep stosb
 
