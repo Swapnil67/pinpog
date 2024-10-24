@@ -81,7 +81,7 @@ entry:
 draw_frame:
 	pusha
 
-	mov ax, 0x0000
+	xor ax, ax
 	mov ds, ax
 	
 	mov ax, VGA_OFFSET
@@ -91,7 +91,7 @@ draw_frame:
 	mov word [rect_width], BALL_WIDTH
 	mov word [rect_height], BALL_HEIGHT
 	mov si, ball_x
-	mov ch, BACKGROUND_COLOR
+	mov ch, BACKGROUND_COLOR	
 	call fill_rect
 
 	;; Clear bar
@@ -223,43 +223,33 @@ fill_screen:
 	
 fill_rect:
 	;; ch - color
-	;; ax - row
-	;; bx - column
 	;; si - pointer to ball_x or bar_x
-	
-	xor ax, ax
-	mov ds, ax
 
-	mov word [y], 0
-.y:			;row
-	mov word [x], 0 
-.x:			;col
+	;; (y + rect_y) * WIDTH + rect_x  [Position of the beginning of the row]
 	mov ax, WIDTH
-	mov bx, [y]
-	;; Add position offset
-	add bx, [si + 2]	; rect_y
-	mul bx
-	mov bx, ax
-	add bx, [x]
-	;; Add position offset
-	add bx, [si]		; rect_x
-	mov BYTE [es: bx], ch
+	xor di, di
+	add di, [si + 2]
+	mul di
+	mov di, ax
+	add di, [si]
+
+	mov al, ch
+	mov bx, [rect_height]
 	
-	inc word [x]
-	mov dx, [rect_width]
-	cmp word [x], dx
-	jb .x
+.row:			;row
+	
+	;; col
+	mov cx, [rect_width]
+	rep stosb
 
-	inc word [y]
-	mov dx, [rect_height]
-	cmp word [y], dx
-	jb .y 
+	;; Add Screen Width to di to get next position of the beginning of the row
+	sub di, [rect_width]
+	add di, WIDTH
 
+	dec bx
+	jnz .row
 	ret
 	
-x:	dw 0xcccc
-y:	dw 0xcccc
- 
 ball_x:	dw 10
 ball_y:	dw 10
 ball_dx:	dw BALL_VELOCITY
