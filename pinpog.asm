@@ -31,6 +31,8 @@ org 0x7c00
 	%define BAR_Y 50
 	%define BAR_HEIGHT BALL_HEIGHT
 	%define BAR_COLOR COLOR_LIGHTBLUE
+	%define VGA_OFFSET 0xA000 ; Video Memory Location
+	
 
 entry:	
 	mov ah, 0x00	
@@ -85,25 +87,20 @@ draw_frame:
 	mov ax, 0x0000
 	mov ds, ax
 	
-	mov ax, 0xa000
+	mov ax, VGA_OFFSET
 	mov es, ax
 
 	;; Clear ball
 	mov word [rect_width], BALL_WIDTH
 	mov word [rect_height], BALL_HEIGHT
-	mov ax, [ball_x]
-	mov word [rect_x], ax
-	mov ax, [ball_y]
-	mov word [rect_y], ax
+	mov si, ball_x
 	mov ch, BACKGROUND_COLOR
 	call fill_rect
 
 	;; Clear bar
 	mov word [rect_width], BAR_WIDTH
 	mov word [rect_height], BAR_HEIGHT
-	mov ax, [bar_x]
-	mov [rect_x], ax
-	mov word [rect_y], HEIGHT - BAR_Y
+	mov si, bar_x
 	mov ch, BACKGROUND_COLOR
 	call fill_rect
 	
@@ -192,19 +189,14 @@ draw_frame:
 	;; Update ball_y -> rect_y
 	mov word [rect_width], BALL_WIDTH
 	mov word [rect_height], BALL_HEIGHT
-	mov ax, [ball_x]
-	mov word [rect_x], ax
-	mov ax, [ball_y]
-	mov word [rect_y], ax
+	mov si, ball_x
 	mov ch, BALL_COLOR
 	call fill_rect
 
 	;; Draw bar
 	mov word [rect_width], BAR_WIDTH
 	mov word [rect_height], BAR_HEIGHT
-	mov ax, [bar_x]
-	mov [rect_x], ax
-	mov word [rect_y], HEIGHT - BAR_Y
+	mov si, bar_x
 	mov ch, BAR_COLOR
 	call fill_rect	
 
@@ -217,20 +209,18 @@ game_over:
 	mov ch, COLOR_RED
 	call fill_screen
 	iret
-	
+
+	;; Iterates through the entire video memory & fills it with a color
 fill_screen:
 	;; ch - color
 	pusha
 
-	mov ax, 0xA000
+	mov ax, VGA_OFFSET
 	mov es, ax
-	
-	xor bx, bx
-.loop:
-	mov BYTE [es: bx], ch
-	inc bx
-	cmp bx, WIDTH * HEIGHT
-	jb .loop
+	xor di, di
+	mov al, ch
+	mov cx, WIDTH * HEIGHT
+	rep stosb
 
 	popa
 	ret
@@ -239,8 +229,9 @@ fill_rect:
 	;; ch - color
 	;; ax - row
 	;; bx - column
+	;; si - pointer to ball_x or bar_x
 	
-	mov ax, 0x0000
+	xor ax, ax
 	mov ds, ax
 
 	mov word [y], 0
@@ -250,12 +241,12 @@ fill_rect:
 	mov ax, WIDTH
 	mov bx, [y]
 	;; Add position offset
-	add bx, [rect_y]
+	add bx, [si + 2]	; rect_y
 	mul bx
 	mov bx, ax
 	add bx, [x]
 	;; Add position offset
-	add bx, [rect_x]
+	add bx, [si]		; rect_x
 	mov BYTE [es: bx], ch
 	
 	inc word [x]
@@ -282,8 +273,6 @@ bar_x:	dw 10
 bar_y:	dw HEIGHT - BAR_Y
 bar_dx:	dw 4
 	
-rect_x:	dw 0xcccc
-rect_y:	dw 0xcccc
 rect_width:	dw 0xcccc
 rect_height:	dw 0xcccc
 	
@@ -294,3 +283,9 @@ rect_height:	dw 0xcccc
 	times 510 - ($-$$) db 0	; pad the sector out with zeros
 	dw 0xaa55		; last two bytes form the magic number
                                 ; so bios knows we are a movmov
+
+	%if $ - $$ != 512
+	%fatal Resulting size is not 512
+	%endif
+
+
