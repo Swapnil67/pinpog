@@ -45,10 +45,7 @@ entry:
 	call fill_screen
 
 	;; Point int 0x1C to draw_frame
-	mov ax, 0
-	mov es, ax
-	mov word [es:0x0070], draw_frame
-	mov word [es:0x0072], 0x00
+	mov dword [0x0070], draw_frame
 
 .loop:
 	mov ah, 0x1
@@ -72,13 +69,13 @@ entry:
 	mov word [bar_dx], 10
 	jmp .loop
 .toggle_pause:
-	mov ax, word [es:0x0070]
+	mov ax, word [0x0070]
 	cmp ax, do_nothing
 	jz .unpause
-	mov word [es:0x0070], do_nothing
+	mov word [0x0070], do_nothing
 	jmp .loop
 .unpause:
-	mov word [es:0x0070], draw_frame
+	mov word [0x0070], draw_frame
 	jmp .loop
 	
 draw_frame:
@@ -147,9 +144,7 @@ draw_frame:
 	jmp .ball_y_col
 	
 .game_over:
-	xor ax, ax
-	mov es, ax
-	mov word [es:0x0070], game_over
+	mov word [0x0070], game_over
 	
 .neg_ball_dy:
 	neg word [ball_dy]
