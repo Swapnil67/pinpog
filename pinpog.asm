@@ -31,12 +31,17 @@ org 0x7c00
 	%define BAR_Y 50
 	%define BAR_HEIGHT BALL_HEIGHT
 	%define BAR_COLOR COLOR_LIGHTBLUE
-	%define VGA_OFFSET 0xA000 ; Video Memory Location
+
+	%define STATE_OVER 2
+	
+	%define VGA_OFFSET 0XA000 ; VIDEO MEMORY LOCATION
+
+	
 	
 
 entry:	
 	mov ah, 0x00	
-	;; VGA mode 0x13
+	;; vga mode 0x13
 	;; 320 x 200 256 colors
 	mov al, 0x13
 	int 0x10
@@ -44,13 +49,13 @@ entry:
 	mov al, BACKGROUND_COLOR
 	call fill_screen
 
-	;; Point int 0x1C to draw_frame
+	;; point int 0x1c to draw_frame
 	mov dword [0x0070], draw_frame
 
 .loop:
 	mov ah, 0x1
 	int 0x16
-	jz .loop		; Checks if keystrokes (0 == no keystroke)
+	jz .loop		; checks if keystrokes (0 == no keystroke)
 
 	mov ah, 0x0
 	int 0x16
@@ -58,8 +63,6 @@ entry:
 	jz .swipe_left
 	cmp al, 'd'
 	jz .swipe_right
-	cmp al, ' '
-	jz .toggle_pause
 	
 	jmp .loop
 .swipe_left:
@@ -67,15 +70,6 @@ entry:
 	jmp .loop
 .swipe_right:
 	mov word [bar_dx], 10
-	jmp .loop
-.toggle_pause:
-	mov ax, word [0x0070]
-	cmp ax, do_nothing
-	jz .unpause
-	mov word [0x0070], do_nothing
-	jmp .loop
-.unpause:
-	mov word [0x0070], draw_frame
 	jmp .loop
 	
 draw_frame:
@@ -249,7 +243,9 @@ fill_rect:
 	dec bx
 	jnz .row
 	ret
-	
+
+
+	;; game_state:	dw STATE_RUNNING
 ball_x:	dw 10
 ball_y:	dw 10
 ball_dx:	dw BALL_VELOCITY
