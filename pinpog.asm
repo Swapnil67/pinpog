@@ -32,19 +32,19 @@ org 0x7c00
 	%define BAR_HEIGHT BALL_HEIGHT
 	%define BAR_COLOR COLOR_LIGHTBLUE
 
-	%define STATE_OVER 2
 	
-	%define VGA_OFFSET 0XA000 ; VIDEO MEMORY LOCATION
+	%define VGA_OFFSET 0xa000 ; video memory location
 
+entry:
 	
-	
-
-entry:	
 	mov ah, 0x00	
 	;; vga mode 0x13
 	;; 320 x 200 256 colors
 	mov al, 0x13
 	int 0x10
+
+	mov ax, VGA_OFFSET
+	mov es, ax
 
 	mov al, BACKGROUND_COLOR
 	call fill_screen
@@ -63,6 +63,8 @@ entry:
 	jz .swipe_left
 	cmp al, 'd'
 	jz .swipe_right
+	cmp al, ' '
+	jz .toggle_pause
 	
 	jmp .loop
 .swipe_left:
@@ -70,6 +72,15 @@ entry:
 	jmp .loop
 .swipe_right:
 	mov word [bar_dx], 10
+	jmp .loop
+.toggle_pause:
+	mov ax, [game_state]
+	cmp ax, pause_state
+	jz .unpause		; Unpause the game
+	mov word [game_state], pause_state ; Pause the game
+	jmp .loop
+.unpause:
+	mov word [game_state], running_state
 	jmp .loop
 	
 draw_frame:
@@ -81,6 +92,9 @@ draw_frame:
 	mov ax, VGA_OFFSET
 	mov es, ax
 
+	jmp [game_state]
+	
+running_state:		
 	;; Clear ball
 	mov word [rect_width], BALL_WIDTH
 	mov word [rect_height], BALL_HEIGHT
@@ -138,7 +152,7 @@ draw_frame:
 	jmp .ball_y_col
 	
 .game_over:
-	mov word [0x0070], game_over
+	mov word [game_state], game_over_state
 	
 .neg_ball_dy:
 	neg word [ball_dy]
@@ -189,13 +203,11 @@ draw_frame:
 	mov ch, BAR_COLOR
 	call fill_rect	
 
+pause_state:
 	popa
 	iret
-	
-do_nothing:	iret
 
-game_over:
-	pusha
+game_over_state:	
 	mov al, COLOR_RED
 	call fill_screen
 	popa
@@ -206,8 +218,6 @@ fill_screen:
 	;; ch - color
 	pusha
 
-	mov bx, VGA_OFFSET
-	mov es, bx
 	xor di, di
 	mov cx, WIDTH * HEIGHT
 	rep stosb
@@ -245,7 +255,7 @@ fill_rect:
 	ret
 
 
-	;; game_state:	dw STATE_RUNNING
+game_state:	dw running_state
 ball_x:	dw 10
 ball_y:	dw 10
 ball_dx:	dw BALL_VELOCITY
