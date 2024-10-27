@@ -97,14 +97,14 @@ draw_frame:
 running_state:		
 	;; Clear ball
 	mov word [rect_width], BALL_WIDTH
-	mov word [rect_height], BALL_HEIGHT
+	mov bx, BALL_HEIGHT
 	mov si, ball_x
 	mov ch, BACKGROUND_COLOR	
 	call fill_rect
 
 	;; Clear bar
 	mov word [rect_width], BAR_WIDTH
-	mov word [rect_height], BAR_HEIGHT
+	mov bx, BAR_HEIGHT
 	mov si, bar_x
 	mov ch, BACKGROUND_COLOR
 	call fill_rect
@@ -191,14 +191,14 @@ running_state:
 	;; Update ball_x -> rect_x
 	;; Update ball_y -> rect_y
 	mov word [rect_width], BALL_WIDTH
-	mov word [rect_height], BALL_HEIGHT
+	mov bx, BALL_HEIGHT
 	mov si, ball_x
 	mov ch, BALL_COLOR
 	call fill_rect
 
 	;; Draw bar
 	mov word [rect_width], BAR_WIDTH
-	mov word [rect_height], BAR_HEIGHT
+	mov bx, BAR_HEIGHT
 	mov si, bar_x
 	mov ch, BAR_COLOR
 	call fill_rect	
@@ -227,6 +227,7 @@ fill_screen:
 	
 fill_rect:
 	;; ch - color
+	;; bx = height
 	;; si - pointer to ball_x or bar_x
 
 	;; (y + rect_y) * WIDTH + rect_x  [Position of the beginning of the row]
@@ -238,7 +239,6 @@ fill_rect:
 	add di, [si]
 
 	mov al, ch
-	mov bx, [rect_height]
 	
 .row:			;row
 	
@@ -250,7 +250,7 @@ fill_rect:
 	sub di, [rect_width]
 	add di, WIDTH
 
-	dec bx
+	dec bx			; rect_height
 	jnz .row
 	ret
 
@@ -266,7 +266,6 @@ bar_y:	dw HEIGHT - BAR_Y
 bar_dx:	dw 4
 	
 rect_width:	dw 0xcccc
-rect_height:	dw 0xcccc
 	
 ;
 ; padding and magic bios number
