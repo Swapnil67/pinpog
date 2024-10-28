@@ -111,14 +111,12 @@ running_state:
 	
 	;; Horizontal Collision Detection
 	;; ball_x <= 0 || ball_x >= WIDTH - BALL_WIDTH
-	mov ax, [ball_x]
-	cmp ax, 0
+	mov word [ball_x], 0
 	jle .neg_ball_dx
 
 	cmp ax, WIDTH - BALL_WIDTH
-	jge .neg_ball_dx
+	jl .ball_x_col
 	
-	jmp .ball_x_col
 .neg_ball_dx:
 	neg word [ball_dx]
 .ball_x_col:
@@ -173,19 +171,16 @@ running_state:
 .bar_x_col:
 	
 	;; ball_x += ball_dx
-	mov ax, [ball_x]
-	add ax, [ball_dx]
-	mov [ball_x], ax
+	mov ax, [ball_dx]
+	add [ball_x], ax
 
 	;; ball_y += ball_dy
-	mov ax, [ball_y]
-	add ax, [ball_dy]
-	mov [ball_y], ax
+	mov ax, [ball_dy]
+	add [ball_y], ax
 
 	;; bar_x += bar_dx
-	mov ax, [bar_x]
-	add ax, [bar_dx]
-	mov [bar_x], ax
+	mov ax, [bar_dx]
+	add [bar_x], ax
 
 	;; Draw color ball
 	;; Update ball_x -> rect_x
