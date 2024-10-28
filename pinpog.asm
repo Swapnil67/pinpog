@@ -160,7 +160,7 @@ running_state:
 	cmp word [bar_x], 0
 	jle .neg_bar_dx
 
-	cmp ax, WIDTH - BAR_WIDTH
+	cmp word [bar_x], WIDTH - BAR_WIDTH
 	jge .neg_bar_dx
 
 	jmp .bar_x_col
