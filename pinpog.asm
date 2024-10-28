@@ -96,17 +96,17 @@ draw_frame:
 	
 running_state:		
 	;; Clear ball
-	mov word [rect_width], BALL_WIDTH
+	mov cx, BALL_WIDTH
 	mov bx, BALL_HEIGHT
 	mov si, ball_x
-	mov ch, BACKGROUND_COLOR	
+	mov al,BACKGROUND_COLOR	
 	call fill_rect
 
 	;; Clear bar
-	mov word [rect_width], BAR_WIDTH
+	mov cx, BAR_WIDTH
 	mov bx, BAR_HEIGHT
 	mov si, bar_x
-	mov ch, BACKGROUND_COLOR
+	mov al, BACKGROUND_COLOR
 	call fill_rect
 	
 	;; Horizontal Collision Detection
@@ -190,17 +190,17 @@ running_state:
 	;; Draw color ball
 	;; Update ball_x -> rect_x
 	;; Update ball_y -> rect_y
-	mov word [rect_width], BALL_WIDTH
+	mov cx, BALL_WIDTH
 	mov bx, BALL_HEIGHT
 	mov si, ball_x
-	mov ch, BALL_COLOR
+	mov al, BALL_COLOR
 	call fill_rect
 
 	;; Draw bar
-	mov word [rect_width], BAR_WIDTH
+	mov cx, BAR_WIDTH
 	mov bx, BAR_HEIGHT
 	mov si, bar_x
-	mov ch, BAR_COLOR
+	mov al, BAR_COLOR
 	call fill_rect	
 
 pause_state:
@@ -226,28 +226,30 @@ fill_screen:
 	ret
 	
 fill_rect:
-	;; ch - color
+	;; al - color
+	;; cx - width
 	;; bx = height
 	;; si - pointer to ball_x or bar_x
 
 	;; (y + rect_y) * WIDTH + rect_x  [Position of the beginning of the row]
+	push ax
 	mov ax, WIDTH
 	xor di, di
 	add di, [si + 2]
 	mul di
 	mov di, ax
+	pop ax
 	add di, [si]
 
-	mov al, ch
-	
 .row:			;row
 	
 	;; col
-	mov cx, [rect_width]
+	push cx
 	rep stosb
+	pop cx
 
 	;; Add Screen Width to di to get next position of the beginning of the row
-	sub di, [rect_width]
+	sub di, cx
 	add di, WIDTH
 
 	dec bx			; rect_height
@@ -264,8 +266,6 @@ ball_dy:	dw -BALL_VELOCITY
 bar_x:	dw 10
 bar_y:	dw HEIGHT - BAR_Y
 bar_dx:	dw 4
-	
-rect_width:	dw 0xcccc
 	
 ;
 ; padding and magic bios number
