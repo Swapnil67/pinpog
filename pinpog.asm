@@ -74,8 +74,7 @@ entry:
 	mov word [bar_dx], 10
 	jmp .loop
 .toggle_pause:
-	mov ax, [game_state]
-	cmp ax, pause_state
+	cmp word [game_state], pause_state
 	jz .unpause		; Unpause the game
 	mov word [game_state], pause_state ; Pause the game
 	jmp .loop
@@ -158,8 +157,7 @@ running_state:
 
 	;; BAR Collision detection
 	;; bar_x <= 0 || bar_x >= WIDTH - BAR_WIDTH 
-	mov ax, [bar_x]
-	cmp ax, 0
+	cmp word [bar_x], 0
 	jle .neg_bar_dx
 
 	cmp ax, WIDTH - BAR_WIDTH
