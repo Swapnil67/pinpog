@@ -94,19 +94,19 @@ draw_frame:
 
 	jmp [game_state]
 	
-running_state:		
+running_state:
+	mov al, BACKGROUND_COLOR
+	
 	;; Clear ball
 	mov cx, BALL_WIDTH
 	mov bx, BALL_HEIGHT
-	mov si, ball_x
-	mov al,BACKGROUND_COLOR	
+	mov si, ball_x	
 	call fill_rect
 
 	;; Clear bar
 	mov cx, BAR_WIDTH
 	mov bx, BAR_HEIGHT
 	mov si, bar_x
-	mov al, BACKGROUND_COLOR
 	call fill_rect
 	
 	;; Horizontal Collision Detection
@@ -213,7 +213,7 @@ game_over_state:
 	popa
 	iret
 
-	;; Iterates through the entire video memory & fills it with a color
+ 	;; Iterates through the entire video memory & fills it with a color
 fill_screen:
 	;; ch - color
 	pusha
