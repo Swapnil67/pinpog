@@ -111,10 +111,10 @@ running_state:
 	
 	;; Horizontal Collision Detection
 	;; ball_x <= 0 || ball_x >= WIDTH - BALL_WIDTH
-	mov word [ball_x], 0
+	cmp word [ball_x], 0
 	jle .neg_ball_dx
 
-	cmp ax, WIDTH - BALL_WIDTH
+	cmp word [ball_x], WIDTH - BALL_WIDTH
 	jl .ball_x_col
 	
 .neg_ball_dx:
