@@ -3,3 +3,7 @@ all: pinpog
 
 pinpog: pinpog.asm
 	nasm pinpog.asm -o pinpog
+
+.PHONY: clean
+clean:
+	rm pinpog

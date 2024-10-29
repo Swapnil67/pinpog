@@ -1,4 +1,4 @@
-org 0x7c00
+ org 0x7c00
 	%define ROW 70
 	%define WIDTH 320
 	%define HEIGHT 200
@@ -253,6 +253,10 @@ ball_dy:	dw -BALL_VELOCITY
 bar_x:	dw 10
 bar_y:	dw HEIGHT - BAR_Y
 bar_dx:	dw 4
+
+	
+	%assign program_size $ - $$
+	%warning Size of the program program_size
 	
 ;
 ; padding and magic bios number
@@ -261,7 +265,7 @@ bar_dx:	dw 4
 	times 510 - ($-$$) db 0	; pad the sector out with zeros
 	dw 0xaa55		; last two bytes form the magic number
                                 ; so bios knows we are a movmov
-
+	
 	%if $ - $$ != 512
 	%fatal Resulting size is not 512
 	%endif
