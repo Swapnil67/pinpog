@@ -224,14 +224,8 @@ fill_rect:
 	;; bx = height
 	;; si - pointer to ball_x or bar_x
 
-	;; (y + rect_y) * WIDTH + rect_x  [Position of the beginning of the row]
-	push ax
-	mov ax, WIDTH
-	xor di, di
-	add di, [si + 2]
-	mul di
-	mov di, ax
-	pop ax
+	;; di = rect_y * WIDTH + rect_x  [Position of the beginning of the row]
+	imul di, [si + 2], WIDTH
 	add di, [si]
 
 .row:			;row
@@ -243,7 +237,7 @@ fill_rect:
 
 	;; Add Screen Width to di to get next position of the beginning of the row
 	sub di, cx
-	add di, WIDTH
+	add di, WIDTH 
 
 	dec bx			; rect_height
 	jnz .row
