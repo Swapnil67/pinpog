@@ -145,15 +145,19 @@ running_state:
 
 	;; ball_y >= HEIGHT - BALL_HEIGHT - BAR_Y
 	cmp word [ball_y], HEIGHT - BALL_HEIGHT - BAR_Y
-	jge .neg_ball_dy
+	jge .score_point
 	jmp .ball_y_col
 	
 .game_over:
 	mov word [game_state], game_over_state
+	popa
+	iret
 	
+.score_point:
+	inc word [score]
 .neg_ball_dy:
 	neg word [ball_dy]
-.ball_y_col:	
+.ball_y_col:
 
 	;; BAR Collision detection
 	;; bar_x <= 0 || bar_x >= WIDTH - BAR_WIDTH 
@@ -253,6 +257,10 @@ ball_dy:	dw -BALL_VELOCITY
 bar_x:	dw 10
 bar_y:	dw HEIGHT - BAR_Y
 bar_dx:	dw 4
+
+cccc1:	dw 0xcccc
+score:	dw 0
+cccc2:	dw 0xcccc
 
 	
 	%assign program_size $ - $$
