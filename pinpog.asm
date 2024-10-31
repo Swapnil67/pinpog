@@ -86,6 +86,15 @@ draw_frame:
 	pusha
 
 	xor ax, ax
+	mov es, ax
+	mov ax, 0x1300
+	mov bx, 0x0064
+	mov cl, [hello_len]
+	xor dx, dx
+	mov bp, hello
+	int 10h
+	
+	xor ax, ax
 	mov ds, ax
 	
 	mov ax, VGA_OFFSET
@@ -262,6 +271,8 @@ cccc1:	dw 0xcccc
 score:	dw 0
 cccc2:	dw 0xcccc
 
+hello: db "Swapnil"
+hello_len: dw	$ - hello
 	
 	%assign program_size $ - $$
 	%warning Size of the program program_size
